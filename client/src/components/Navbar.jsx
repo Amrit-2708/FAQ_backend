@@ -21,7 +21,7 @@ const Navbar = () => {
                         User
                     </a>
 
-                    <a href="/" className="text-sm/6 font-semibold py-2">
+                    <a href="/admin" className="text-sm/6 font-semibold py-2">
                         Admin
                     </a>
 

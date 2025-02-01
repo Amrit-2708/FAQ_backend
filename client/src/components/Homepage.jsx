@@ -1,15 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import LanguageSelector from 'react-language-selector-lite';
+
+
 import Navbar from "./navbar";
 import axios from "axios";
-// import { CKEditor } from '@ckeditor/ckeditor5-react';
-// import { ClassicEditor, Essentials, Paragraph, Bold, Italic } from 'ckeditor5';
-import "ckeditor5/ckeditor5.css";
+
 
 const Homepage = () => {
     const [question, setQuestion] = useState();
+    const [data, setData] = useState([]);
+    const [changed, setChanged] = useState([]);
+    const [error, setError] = useState(null);
     const navigate = useNavigate();
     const isQuestionFilled = question;
+
+    const [translatedStatic, setTranslatedStatic] = useState({
+        faq_title: "FAQ",
+        faq_heading: "Frequently asked questions",
+        faq_description: "Can’t find the answer you’re looking for? Ask us now by filling up the box below.",
+        placeholder: "Ask a question",
+        submit: "Submit"
+    });
+
+
+    const handleLanguageSelect = (language) => {
+        console.log('Selected language:', language);
+        axios.get(`http://localhost:3001/translate/${language}`).then((result) => {
+            console.log(`${language}:`, result);
+            setChanged(result.data.translated_data);
+            setTranslatedStatic(result.data.translated_static);
+            console.log("navigation ke pehle: ", changed);
+            setTimeout(() => {
+                navigate(`/${language}`);
+                setChanged(result.data.translated_data);
+                console.log("navigation ke baad array check kr rhe: ", changed);
+            }, 2000);
+        })
+    };
+
+    useEffect(() => {
+        console.log("use effect ke baad Changed data:", changed);
+    }, [changed]);
+
+    useEffect(() => {
+        console.log("static change hue ki nhi: ", translatedStatic);
+    }, [translatedStatic]);
+
+
+
+
+    useEffect(() => {
+        axios
+            .get("http://localhost:3001/faq")
+            .then((res) => {
+                console.log("aaya re aaya: ", res.data.info);
+                setData(res.data.info)
+            }).catch((error) => {
+                console.log(error);
+            });
+    }, [])
+
 
     function handleSubmit() {
         console.log(question);
@@ -31,23 +82,23 @@ const Homepage = () => {
     return (
         <div>
             <Navbar></Navbar>
+            <LanguageSelector onSelect={handleLanguageSelect} theme="light" />
             <div className="faq_head text-6xl text-center my-8 font-semibold">
-                FAQ
+                {translatedStatic.faq_title}
             </div>
             <div className="content flex px-20 pt-10">
                 <div className="question p-10">
                     <h1 className="text-4xl font-bold mb-4">
-                        Frequently asked questions
+                        {translatedStatic.faq_heading}
                     </h1>
                     <p className="text-lg">
-                        Can’t find the answer you’re looking for? Ask us now by filling up
-                        the box below.
+                        {translatedStatic.faq_description}
                     </p>
                     <textarea
                         className="border-2 mt-5"
                         name="ques_field"
                         maxLength="255"
-                        placeholder="Ask a question"
+                        placeholder={translatedStatic.placeholder}
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
                         rows="5"
@@ -57,39 +108,28 @@ const Homepage = () => {
                         onClick={handleSubmit}
                         disabled={!isQuestionFilled}
                         className={`w-1/3 h-10 rounded-md border border-slate-200 text-white ${isQuestionFilled
-                                ? "bg-blue-800 cursor-pointer"
-                                : "bg-gray-500 cursor-not-allowed"
+                            ? "bg-blue-800 cursor-pointer"
+                            : "bg-gray-500 cursor-not-allowed"
                             }`}
                     >
-                        Submit
+                        {translatedStatic.submit}
                     </button>
                 </div>
 
-                <div className="with_answer p-10">
-                    <div>
-                        <h1 className="text-2xl font-semibold">What is FAQ?</h1>
-                        <p>Faq stands for Frequently asked question</p>
-                    </div>
-                    <div className="mt-8">
-                        <h1 className="text-2xl font-semibold">
-                            Who can open a Fixed Deopsit?
-                        </h1>
-                        <p>
-                            Any Indian citizen who is 18 years old or older and has valid
-                            identification documents like a PAN card and Aadhaar can open a
-                            Fixed Deposit.
-                        </p>
-                    </div>
-                    <div className="mt-8">
-                        <h1 className="text-2xl font-semibold">
-                            Is there a minimum or maximum amount required to open an FD?
-                        </h1>
-                        <p>
-                            The minimum amount is usually ₹1,000, while the maximum amount can
-                            vary by institution, often up to ₹1 crore or more.
-                        </p>
-                    </div>
-                </div>
+                {!changed.length > 0 && (<div className="with_answer p-10">
+                    {data.map((data, index) => (<div key={index} className="mb-8">
+                        <h1 className="text-2xl font-semibold">{data.question}</h1>
+                        <p>{data.answer}</p>
+                    </div>))}
+                </div>)}
+
+                {changed.length > 0 && (<div className="with_answer p-10">
+                    {changed.map((item, index) => (<div key={index} className="mb-8">
+                        <h1 className="text-2xl font-semibold">{item.translated_question}</h1>
+                        <p>{item.translated_answer}</p>
+                    </div>))}
+                </div>)}
+
             </div>
         </div>
     );

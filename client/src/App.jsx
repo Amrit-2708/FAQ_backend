@@ -9,6 +9,7 @@ function App() {
     <BrowserRouter>
     <Routes>
       <Route path='/' element={<Homepage />}></Route>
+      <Route path='/:language' element={<Homepage />}></Route>
     </Routes>
   </BrowserRouter>
   )
